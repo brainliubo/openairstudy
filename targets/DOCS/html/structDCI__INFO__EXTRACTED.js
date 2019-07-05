@@ -1,0 +1,25 @@
+var structDCI__INFO__EXTRACTED =
+[
+    [ "type", "structDCI__INFO__EXTRACTED.html#a5ec14db3afa5cd0de7f9baaee77ea68a", null ],
+    [ "rah", "structDCI__INFO__EXTRACTED.html#a840cb3ebb2fd5ca1d3e5ecc70e32952f", null ],
+    [ "harq_pid", "structDCI__INFO__EXTRACTED.html#aabef61b42018ebf8ea521609a1c05c8d", null ],
+    [ "cqi_req", "structDCI__INFO__EXTRACTED.html#abe2449d53c82b85f9cb65d7951297783", null ],
+    [ "srs_req", "structDCI__INFO__EXTRACTED.html#a6ad20c2097a65648c7a312b41cb9653c", null ],
+    [ "TPC", "structDCI__INFO__EXTRACTED.html#a8049b358d96c1799bc249dab2ac110c7", null ],
+    [ "vrb_type", "structDCI__INFO__EXTRACTED.html#a97d05b182923af80d80d97992abb6351", null ],
+    [ "rballoc", "structDCI__INFO__EXTRACTED.html#a21d36b315f6234462e3cb1165d2d7b97", null ],
+    [ "Ngap", "structDCI__INFO__EXTRACTED.html#aa5e98b6fa5789b670b9e83940e0c6427", null ],
+    [ "cshift", "structDCI__INFO__EXTRACTED.html#a2668592bc5ac0d211c9f56299db42e93", null ],
+    [ "hopping", "structDCI__INFO__EXTRACTED.html#a7655123070043dc7cb48365c7d769f6e", null ],
+    [ "dai", "structDCI__INFO__EXTRACTED.html#a5638f4bf2ef9e7bc50e0f27be0555db5", null ],
+    [ "ulindex", "structDCI__INFO__EXTRACTED.html#a63ef4f7b34fd22aad759b0de8c4f72de", null ],
+    [ "tb_swap", "structDCI__INFO__EXTRACTED.html#aed5bdd648f55cb6c9b4a4c4826417d1b", null ],
+    [ "tpmi", "structDCI__INFO__EXTRACTED.html#a89c457a5de447692d8ef66942dca58f8", null ],
+    [ "rv2", "structDCI__INFO__EXTRACTED.html#a67de3dd99509f06b4c82d8b1fd582182", null ],
+    [ "ndi2", "structDCI__INFO__EXTRACTED.html#a2f6f74f14b810c58a1b86bff3401c4f7", null ],
+    [ "mcs2", "structDCI__INFO__EXTRACTED.html#a2aa63a8b619f962c4dc5b7ee86af7885", null ],
+    [ "rv1", "structDCI__INFO__EXTRACTED.html#a9171d5d02b27f3ea9985e748d9ab1077", null ],
+    [ "ndi1", "structDCI__INFO__EXTRACTED.html#affd8b1660e351e45777dc962e151709f", null ],
+    [ "mcs1", "structDCI__INFO__EXTRACTED.html#acb6f055f78faf207360aac019ba8d730", null ],
+    [ "ap_si_nl_id", "structDCI__INFO__EXTRACTED.html#af59d81f73267fd0b3b0efd1476779e21", null ]
+];

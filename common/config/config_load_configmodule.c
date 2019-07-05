@@ -212,7 +212,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
 
   /* look for the OAI_CONFIGMODULE environement variable */
   if ( cfgparam == NULL ) {
-    cfgparam = getenv("OAI_CONFIGMODULE");
+    cfgparam = getenv("OAI_CONFIGMODULE"); //!< return OAI_CONFIGMODULE environment variable's value 
   }
 
   /* default different for UE and softmodem because UE doesn't use config file*/
@@ -256,15 +256,15 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
   cfgptr->rtflags = cfgptr->rtflags | tmpflags;
   cfgptr->argc   = argc;
   cfgptr->argv   = argv;
-  cfgptr->cfgmode=strdup(cfgmode);
+  cfgptr->cfgmode=strdup(cfgmode); //!< strdup is a copy function 
   cfgptr->num_cfgP=0;
-  atoken=strtok_r(modeparams,":",&strtokctx);
+  atoken=strtok_r(modeparams,":",&strtokctx); //!<split the modeparams with ":" symbol ,atoken array record the splited value 
 
   while ( cfgptr->num_cfgP< CONFIG_MAX_OOPT_PARAMS && atoken != NULL) {
     /* look for debug level in the config parameters, it is commom to all config mode
        and will be removed frome the parameter array passed to the shared module */
     char *aptr;
-    aptr=strcasestr(atoken,"dbgl");
+    aptr=strcasestr(atoken,"dbgl"); //!< return the first match address in atoken array 
 
     if (aptr != NULL) {
       cfgptr->rtflags = cfgptr->rtflags | strtol(aptr+4,NULL,0);

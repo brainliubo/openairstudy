@@ -149,10 +149,11 @@ rrc_data_ind(
     MessageDef *message_p;
     // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
     uint8_t *message_buffer;
-
+    //!不管是ENB 还是UE ,都是从PDCP 到RRC 的
     message_buffer = itti_malloc (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, ctxt_pP->enb_flag ? TASK_RRC_ENB : TASK_RRC_UE, sdu_sizeP);
-    memcpy (message_buffer, buffer_pP, sdu_sizeP);
 
+	memcpy (message_buffer, buffer_pP, sdu_sizeP); //！从buffer_bp中将数据copy到message中去
+    //!向RRC 发送消息
     message_p = itti_alloc_new_message (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, RRC_DCCH_DATA_IND);
     RRC_DCCH_DATA_IND (message_p).frame      = ctxt_pP->frame;
     RRC_DCCH_DATA_IND (message_p).dcch_index = DCCH_index;

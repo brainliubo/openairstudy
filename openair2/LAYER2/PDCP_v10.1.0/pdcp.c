@@ -441,6 +441,8 @@ boolean_t pdcp_data_req(
 
 
 //-----------------------------------------------------------------------------
+//!从RLC向PDCP上传数据
+
 boolean_t
 pdcp_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
@@ -510,7 +512,8 @@ pdcp_data_ind(
     }
 
   } else {
-    rb_id = rb_idP % LTE_maxDRB;
+   //！非MBMS 场景
+    rb_id = rb_idP % LTE_maxDRB; //!最大DRB 个数为11个
     AssertError (rb_id < LTE_maxDRB, return FALSE, "RB id is too high (%u/%d) %u UE %x!\n",
                  rb_id,
                  LTE_maxDRB,
@@ -521,6 +524,7 @@ pdcp_data_ind(
                  LTE_maxDRB,
                  ctxt_pP->module_id,
                  ctxt_pP->rnti);
+	//！根据rb_id等信息，生成key,从基站的PDCP hash table中获取pdcp实体
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_id, srb_flagP);
     h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -535,7 +539,7 @@ pdcp_data_ind(
     }
   }
 
-  sdu_list_p = &pdcp_sdu_list;
+  sdu_list_p = &pdcp_sdu_list; //!PDCP同样使用链表维护SDU 
 
   if (sdu_buffer_sizeP == 0) {
     LOG_W(PDCP, "SDU buffer size is zero! Ignoring this chunk!\n");
@@ -877,7 +881,7 @@ pdcp_data_ind(
 
   }
 
-  free_mem_block(sdu_buffer_pP, __func__);
+  free_mem_block(sdu_buffer_pP, __func__);  //!在PDCP 这边将RLC 给过来的buffer 释放掉
 
   if (ctxt_pP->enb_flag) {
     stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].data_ind);

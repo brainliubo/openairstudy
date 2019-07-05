@@ -513,6 +513,7 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
     }
 
     LOG_T(RRC,"\n");
+	// 生成rrc_connectionrequest的消息，编码发送 
     UE_rrc_inst[ctxt_pP->module_id].Srb0[eNB_index].Tx_buffer.payload_size =
       do_RRCConnectionRequest(
         ctxt_pP->module_id,
@@ -1246,6 +1247,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 
     if (UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index]) {
 #if 1
+     //!< 此函数只处理physicalConfigDedicated IE ,更新进去
       rrc_ue_update_radioResourceConfigDedicated(radioResourceConfigDedicated, ctxt_pP, eNB_index);
 #else
       memcpy((char *)UE_rrc_inst[ctxt_pP->module_id].physicalConfigDedicated[eNB_index],(char *)radioResourceConfigDedicated->physicalConfigDedicated,
@@ -1306,6 +1308,7 @@ rrc_ue_process_radioResourceConfigDedicated(
 
   // Establish SRBs if present
   // loop through SRBToAddModList
+  //!< 根据收到的srb_toAddModlist, 建立PDCP实体（按照配置的安全配置），建立RLC 实体，并建立DCCH 逻辑信道（按照逻辑信道设置）
   if (radioResourceConfigDedicated->srb_ToAddModList) {
     uint8_t *kRRCenc = NULL;
     uint8_t *kRRCint = NULL;
@@ -1357,6 +1360,7 @@ rrc_ue_process_radioResourceConfigDedicated(
           UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index] = radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt];
           rrc_ue_establish_srb1(ctxt_pP->module_id,ctxt_pP->frame,eNB_index,radioResourceConfigDedicated->srb_ToAddModList->list.array[cnt]);
 
+		  //!< srb_toAddMod中，包含logicalChannelConfig
           if (UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig) {
             if (UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig->present == LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
               SRB1_logicalChannelConfig = &UE_rrc_inst[ctxt_pP->module_id].SRB1_config[eNB_index]->logicalChannelConfig->choice.explicitValue;
@@ -2137,13 +2141,13 @@ rrc_ue_decode_dcch(
 #if defined(ENABLE_ITTI)
   MessageDef *msg_p;
 #endif
-
+   // DL_DCCH_DATA 中携带的信息都是SRB1 上的，因此如果不等1 ，则返回，不处理
   if (Srb_id != 1) {
     LOG_E(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%d), should not have ...\n",
           ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
     return;
   }
-
+  //！<ASN1 译码
   uper_decode(NULL,
               &asn_DEF_LTE_DL_DCCH_Message,
               (void **)&dl_dcch_msg,
@@ -2182,7 +2186,7 @@ rrc_ue_decode_dcch(
             MessageDef *msg_p;
             pdu_length = dedicatedInfoType->choice.dedicatedInfoNAS.size;
             pdu_buffer = dedicatedInfoType->choice.dedicatedInfoNAS.buf;
-            msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND);
+            msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_DOWNLINK_DATA_IND); //传给NAS,NAS再传给EMM
             NAS_DOWNLINK_DATA_IND(msg_p).UEid = ctxt_pP->module_id; // TODO set the UEid to something else ?
             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length = pdu_length;
             NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data = pdu_buffer;
@@ -2198,7 +2202,9 @@ rrc_ue_decode_dcch(
 
         case LTE_DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
           break;
-
+       //!< rrcConnectionReconfiguration的作用包括：establish/modify/release RB,handover,
+         //!<setup/modify/release measurement, add/modify/release SCELL等。
+        //!< NAS dedicated info 
         case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 
           // first check if mobilityControlInfo  is present
@@ -2611,6 +2617,7 @@ int decode_BCCH_DLSCH_Message(
   LTE_SystemInformationBlockType1_t *sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
 
+   //!< 这里不进行译码，直接return 
   if (((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 1) &&  // SIB1 received
       (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt == sib1->schedulingInfoList.list.count)) {
     // Avoid decoding  SystemInformationBlockType1_t* sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
@@ -2644,7 +2651,7 @@ int decode_BCCH_DLSCH_Message(
 
   if (bcch_message->message.present == LTE_BCCH_DL_SCH_MessageType_PR_c1) {
     switch (bcch_message->message.choice.c1.present) {
-      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1: //!< 包含SIB1 
         if ((ctxt_pP->frame % 2) == 0) {
           // even frame
           if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 0) {
@@ -2653,23 +2660,23 @@ int decode_BCCH_DLSCH_Message(
                     (void *)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
                     sizeof(LTE_SystemInformationBlockType1_t) );
             LOG_D( RRC, "[UE %"PRIu8"] Decoding First SIB1\n", ctxt_pP->module_id );
-            decode_SIB1( ctxt_pP, eNB_index, rsrq, rsrp );
+            decode_SIB1( ctxt_pP, eNB_index, rsrq, rsrp );  //!<译码SIB1 
           }
         }
 
         break;
 
-      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformation: //!<SYSTEM INFOAMTION 
         if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 1) {
           // SIB1 with schedulingInfoList is available
           LTE_SystemInformation_t *si = UE_rrc_inst[ctxt_pP->module_id].si[eNB_index];
-          memcpy( si,
+          memcpy(si,
                   &bcch_message->message.choice.c1.choice.systemInformation,
                   sizeof(LTE_SystemInformation_t) );
           LOG_I( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
                  ctxt_pP->module_id,
                  ctxt_pP->frame );
-          decode_SI( ctxt_pP, eNB_index );
+          decode_SI( ctxt_pP, eNB_index ); //!< sib2-sib13 承载在SI上，根据sib1的中的scheduleinfolist进行映射
           //if (nfapi_mode == 3)
           UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
         }
@@ -2687,7 +2694,7 @@ int decode_BCCH_DLSCH_Message(
       && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
 #endif
      ) {
-    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
+    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0); //!<编码产生rrcconnectionrequeset 
     rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
   }
 
@@ -2829,7 +2836,10 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
 
   LOG_I( RRC, "siWindowLength                             : %s\n", siWindowLength[min(sib1->si_WindowLength,7)] );
   LOG_I( RRC, "systemInfoValueTag                         : %ld\n", sib1->systemInfoValueTag );
+
+  //!<rf8 表示是8个无线帧，即80ms 
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIperiod     = siPeriod_int[sib1->schedulingInfoList.list.array[0]->si_Periodicity];
+  //!< 单位是ms
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIwindowsize = siWindowLength_int[sib1->si_WindowLength];
   LOG_I( RRC, "[FRAME unknown][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB1 params eNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
          ctxt_pP->module_id, eNB_index, ctxt_pP->module_id );
@@ -2876,7 +2886,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
 #if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
   {
     int cell_valid = 0;
-
+    //!< cell is enabled 
     if (sib1->cellAccessRelatedInfo.cellBarred == LTE_SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred) {
       /* Cell is not barred */
       int plmn;
@@ -4318,11 +4328,16 @@ void *rrc_ue_task( void *args_p ) {
         break;
 
       /* MAC messages */
+
+	  //!< N310: 从底层收到out_of_sync的个数
+	  //!< N311: 从底层收到in_sync 的个数
       case RRC_MAC_IN_SYNC_IND:
         LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               RRC_MAC_IN_SYNC_IND (msg_p).frame, RRC_MAC_IN_SYNC_IND (msg_p).enb_index);
+		 //!< 收到同步标识 ，则N310_CNT 清0 
         UE_rrc_inst[ue_mod_id].Info[RRC_MAC_IN_SYNC_IND (msg_p).enb_index].N310_cnt = 0;
-
+		
+        //!< 如果T310 运行，当收到N311个连续的"in sync "时，定时器停止，T310 和N311,N310 共同维护网络同步
         if (UE_rrc_inst[ue_mod_id].Info[RRC_MAC_IN_SYNC_IND (msg_p).enb_index].T310_active == 1) {
           UE_rrc_inst[ue_mod_id].Info[RRC_MAC_IN_SYNC_IND (msg_p).enb_index].N311_cnt++;
         }
@@ -4332,6 +4347,7 @@ void *rrc_ue_task( void *args_p ) {
       case RRC_MAC_OUT_OF_SYNC_IND:
         LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               RRC_MAC_OUT_OF_SYNC_IND (msg_p).frame, RRC_MAC_OUT_OF_SYNC_IND (msg_p).enb_index);
+		//当收到out_of_sync 时，N310_cnt ++
         UE_rrc_inst[ue_mod_id].Info[RRC_MAC_OUT_OF_SYNC_IND (msg_p).enb_index].N310_cnt ++;
         break;
 
@@ -4339,13 +4355,15 @@ void *rrc_ue_task( void *args_p ) {
         LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
               RRC_MAC_BCCH_DATA_IND (msg_p).frame, RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
         //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
-        decode_BCCH_DLSCH_Message (&ctxt,
+        //!<计算UE的instance ? 这个instance实例需要再细看一下
+		PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,RRC_MAC_BCCH_DATA_IND (msg_p).enb_index);
+         //!<收到SIB和SIB1消息，进行ASN.1 解码,并配置MAC_UE ,如果没有收到合适的小区，则通知物理层检测下一个小区
+		decode_BCCH_DLSCH_Message (&ctxt,
                                    RRC_MAC_BCCH_DATA_IND (msg_p).enb_index,
                                    RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
                                    RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrq, //!< RSRQ和RSRP 是从PHY上报上来的
+                                   RRC_MAC_BCCH_DATA_IND (msg_p).rsrp); //!<在mac_rrc_data_ind_ue 函数中上报
         break;
 
       case RRC_MAC_CCCH_DATA_CNF:

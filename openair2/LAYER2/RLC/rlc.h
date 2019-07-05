@@ -124,7 +124,7 @@ typedef struct {
     struct mac_tb_ind dummy4;
     struct mac_rx_tb_management dummy5;
   } dummy;
-} mac_rlc_max_rx_header_size_t;
+} mac_rlc_max_rx_header_size_t;   //!< MAC->RLC的数据头定义
 
 
 

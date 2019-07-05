@@ -43,8 +43,8 @@ typedef struct mem_block_t {
   struct mem_block_t *next;
   struct mem_block_t *previous;
   size_t size;
-  unsigned char pool_id;
-  unsigned char *data;
+  unsigned char pool_id; //!<从哪个pool中获取的
+  unsigned char *data;  //！数据地址
 } mem_block_t;
 
 //-----------------------------------------------------------------------------

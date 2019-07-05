@@ -86,8 +86,8 @@ list_remove_head (list_t * listP)
 
   // almost one element
   if (head != NULL) {
-    listP->head = head->next;
-    listP->nb_elements = listP->nb_elements - 1;
+    listP->head = head->next; //！head的next作为新的head 
+    listP->nb_elements = listP->nb_elements - 1; 
 
     // if only one element, update tail
     if (listP->head == NULL) {
@@ -192,18 +192,18 @@ list_add_tail_eurecom (mem_block_t * elementP, list_t * listP)
 
   if (elementP != NULL) {
     // access optimisation
-    listP->nb_elements = listP->nb_elements + 1;
-    elementP->next = NULL;
-    tail = listP->tail;
+    listP->nb_elements = listP->nb_elements + 1; //！总的个数加1 
+    elementP->next = NULL; //!尾节点的next = NULL 
+    tail = listP->tail; //!当前list的tail节点
 
     // almost one element
-    if (tail == NULL) {
+    if (tail == NULL) {   //！如果当前tail节点为空，则加入进去的就是头节点
       listP->head = elementP;
     } else {
-      tail->next = elementP;
+      tail->next = elementP; //!否者在当前tail节点后面加上当前节点，使当前节点成为位节点
     }
 
-    listP->tail = elementP;
+    listP->tail = elementP; //！更新list的tail节点指针
   } else {
     //msg("[CNT_LIST][ERROR] add_cnt_tail() element NULL\n");
   }
@@ -216,7 +216,7 @@ list_add_list (list_t * sublistP, list_t * listP)
   //-----------------------------------------------------------------------------
 
   if (sublistP) {
-    if (sublistP->head) {
+    if (sublistP->head) {  //！如果子LIST . 
       // access optimisation
       mem_block_t      *tail;
 
@@ -226,15 +226,15 @@ list_add_list (list_t * sublistP, list_t * listP)
       if (tail == NULL) {
         listP->head = sublistP->head;
       } else {
-        tail->next = sublistP->head;
+        tail->next = sublistP->head; //!<将子list的head 添加到LIST的tail上去，添加在后面
       }
 
-      listP->tail = sublistP->tail;
+      listP->tail = sublistP->tail; //!原list的tail 修改为子list的tail 
       // clear sublist
-      sublistP->head = NULL;
+      sublistP->head = NULL;  //!<将子list 清除
       sublistP->tail = NULL;
-      listP->nb_elements = listP->nb_elements + sublistP->nb_elements;
-      sublistP->nb_elements = 0;
+      listP->nb_elements = listP->nb_elements + sublistP->nb_elements; //list的element 个数增加
+      sublistP->nb_elements = 0; //!清除子list的元素个数
     }
   }
 }

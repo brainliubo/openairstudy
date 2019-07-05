@@ -40,6 +40,7 @@
 #endif
 # include "enb_app.h"
 
+//!< 使用linux自带的多线程管理函数进行task的创建
 int create_tasks_ue(uint32_t ue_nb) {
   LOG_D(ENB_APP, "%s(ue_nb:%d)\n", __FUNCTION__, ue_nb);
   itti_wait_ready(1);
@@ -52,7 +53,7 @@ int create_tasks_ue(uint32_t ue_nb) {
     if (users == NULL) abort();
 
     users->count = ue_nb;
-
+     //!<创建的是task_Nas UE 
     if (itti_create_task (TASK_NAS_UE, nas_ue_task, users) < 0) {
       LOG_E(NAS, "Create task for NAS UE failed\n");
       return -1;
@@ -61,7 +62,7 @@ int create_tasks_ue(uint32_t ue_nb) {
 
 #      endif
 #      endif
-
+      //!<创建了task_rrc_ue
   if (ue_nb > 0) {
     if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
       LOG_E(RRC, "Create task for RRC UE failed\n");

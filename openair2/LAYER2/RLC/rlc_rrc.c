@@ -89,23 +89,23 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
   if (srb2add_listP != NULL) {
     for (cnt=0; cnt<srb2add_listP->list.count; cnt++) {
-      rb_id = srb2add_listP->list.array[cnt]->srb_Identity;
+      rb_id = srb2add_listP->list.array[cnt]->srb_Identity;  //!<1表示SRB1,2:表示SRB2
       lc_id = rb_id;
 
       LOG_D(RLC, "Adding SRB %ld, rb_id %d\n",srb2add_listP->list.array[cnt]->srb_Identity,rb_id);
       srb_toaddmod_p = srb2add_listP->list.array[cnt];
 
-      if (srb_toaddmod_p->rlc_Config) {
+      if (srb_toaddmod_p->rlc_Config) {  //!<如果存在rlc_config 
         switch (srb_toaddmod_p->rlc_Config->present) {
         case LTE_SRB_ToAddMod__rlc_Config_PR_NOTHING:
           break;
 
         case LTE_SRB_ToAddMod__rlc_Config_PR_explicitValue:
           switch (srb_toaddmod_p->rlc_Config->choice.explicitValue.present) {
-          case LTE_RLC_Config_PR_NOTHING:
+          case LTE_RLC_Config_PR_NOTHING:  
             break;
 
-          case LTE_RLC_Config_PR_am:
+          case LTE_RLC_Config_PR_am:  //!<如果是AM 模式，则添加rlc AM实体
             if (rrc_rlc_add_rlc (ctxt_pP, SRB_FLAG_YES, MBMS_FLAG_NO, rb_id, lc_id, RLC_MODE_AM
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,0,
@@ -737,10 +737,10 @@ rlc_union_t* rrc_rlc_add_rlc   (
   	return rlc_union_p;
   } else if (h_rc == HASH_TABLE_KEY_NOT_EXISTS) {
     rlc_union_p = calloc(1, sizeof(rlc_union_t));
-    h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);
-    h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p);
+    h_rc = hashtable_insert(rlc_coll_p, key, rlc_union_p);  //!rb_id生成的h_rc
+    h_lcid_rc = hashtable_insert(rlc_coll_p, key_lcid, rlc_union_p); //logic chid 生成的h_lcid_rc 
 
-    if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {
+    if ((h_rc == HASH_TABLE_OK) && (h_lcid_rc == HASH_TABLE_OK)) {  //!<如果插入成功
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
       if (MBMS_flagP == TRUE) {
@@ -750,7 +750,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
               mbms_id_p->session_id);
       } else
 #endif
-      {
+      {  //!<打印log 
         LOG_I(RLC, PROTOCOL_CTXT_FMT" [%s %u] rrc_rlc_add_rlc  %s\n",
               PROTOCOL_CTXT_ARGS(ctxt_pP),
               (srb_flagP) ? "SRB" : "DRB",
@@ -758,8 +758,8 @@ rlc_union_t* rrc_rlc_add_rlc   (
               (srb_flagP) ? "SRB" : "DRB");
       }
 
-      rlc_union_p->mode = rlc_modeP;
-      return rlc_union_p;
+      rlc_union_p->mode = rlc_modeP; //!<更新mode, 
+      return rlc_union_p;  //!<并将这个union 返回。
     } else {
       LOG_E(RLC, PROTOCOL_CTXT_FMT"[%s %u] rrc_rlc_add_rlc FAILED %s (add by RB_id=%d; add by LC_id=%d)\n",
             PROTOCOL_CTXT_ARGS(ctxt_pP),
@@ -767,7 +767,7 @@ rlc_union_t* rrc_rlc_add_rlc   (
             rb_idP,
             (srb_flagP) ? "SRB" : "DRB",
             h_rc, h_lcid_rc);
-      free(rlc_union_p);
+      free(rlc_union_p);  //!< 如果插入到hash表中失败时，则将其free掉。
       rlc_union_p = NULL;
       return NULL;
     }

@@ -133,15 +133,16 @@ rlc_um_receive (
   uint8_t               *first_byte_p     = NULL;
   uint16_t               tb_size_in_bytes = 0;
 
-  while ((tb_p = list_remove_head (&data_indP.data))) {
+  while ((tb_p = list_remove_head (&data_indP.data))) { //！按照链表从head开始依次处理
 
-    first_byte_p = ((struct mac_tb_ind *) (tb_p->data))->data_ptr;
-    tb_size_in_bytes = ((struct mac_tb_ind *) (tb_p->data))->size;
+    first_byte_p = ((struct mac_tb_ind *) (tb_p->data))->data_ptr;  //！数据首地址 
+    tb_size_in_bytes = ((struct mac_tb_ind *) (tb_p->data))->size;  //！tb size 
 
-    rlc_pP->stat_rx_data_bytes += tb_size_in_bytes;
-    rlc_pP->stat_rx_data_pdu   += 1;
+    rlc_pP->stat_rx_data_bytes += tb_size_in_bytes; //！统计接收Byte
+    rlc_pP->stat_rx_data_pdu   += 1; //!接收到的PDU ++
 
     if (tb_size_in_bytes > 0) {
+		
       rlc_um_receive_process_dar (ctxt_pP, rlc_pP, tb_p, (rlc_um_pdu_sn_10_t*)first_byte_p, tb_size_in_bytes);
 #if defined(TRACE_RLC_UM_RX)
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" VR(UR)=%03d VR(UX)=%03d VR(UH)=%03d\n",

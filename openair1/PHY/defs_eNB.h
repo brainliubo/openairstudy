@@ -900,7 +900,7 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t              configured;
   L1_proc_t            proc;
   int                  single_thread_flag;
-  int                  abstraction_flag;
+  int                  abstraction_flag;  //!<物理层抽象技术，如果是完整物理层，则=0. 
   int                  num_RU;
   RU_t                 *RU_list[MAX_NUM_RU_PER_eNB];
   /// Ethernet parameters for northbound midhaul interface

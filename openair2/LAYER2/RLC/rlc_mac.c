@@ -55,9 +55,10 @@ struct mac_data_ind mac_rlc_deserialize_tb (
 
   nb_tb_read = 0;
   tbs_size   = 0;
-  list_init(&data_ind.data, NULL);
+  list_init(&data_ind.data, NULL); //!初始化链表
 
   while (num_tbP > 0) {
+  	//！get 一块大为mem_block_t + sizeof (mac_rlc_max_rx_header_size_t) + tb_sizeP 大小的memory 
     tb_p = get_free_mem_block(sizeof (mac_rlc_max_rx_header_size_t) + tb_sizeP, __func__);
 
     if (tb_p != NULL) {
@@ -79,7 +80,7 @@ struct mac_data_ind mac_rlc_deserialize_tb (
 #endif
       nb_tb_read = nb_tb_read + 1;
       tbs_size   = tbs_size   + tb_sizeP;
-      list_add_tail_eurecom(tb_p, &data_ind.data);
+      list_add_tail_eurecom(tb_p, &data_ind.data); //！将mac给过来的数据添加到data_ind.dat链表后面
     }
 
     num_tbP = num_tbP - 1;
@@ -99,16 +100,17 @@ tbs_size_t mac_rlc_serialize_tb (char* buffer_pP, list_t transport_blocksP)
   tbs_size_t   tb_size;
 
   tbs_size = 0;
-
+  //! 循环tb 个数
   while (transport_blocksP.nb_elements > 0) {
-    tb_p = list_remove_head (&transport_blocksP);
+    tb_p = list_remove_head (&transport_blocksP); //！从head 开始依次的处理，每次处理后，更新head 
 
     if (tb_p != NULL) {
-      tb_size = ((struct mac_tb_req *) (tb_p->data))->tb_size;
+      tb_size = ((struct mac_tb_req *) (tb_p->data))->tb_size; 
 #ifdef DEBUG_MAC_INTERFACE
       LOG_T(RLC, "[MAC-RLC] DUMP TX PDU(%d bytes):\n", tb_size);
       rlc_util_print_hex_octets(RLC, ((struct mac_tb_req *) (tb_p->data))->data_ptr, tb_size);
 #endif
+      //！每次将一个节点所指向的地址的数据向buffer中copy,并增加tbs_size ,直到所有的节点处理完
       memcpy(&buffer_pP[tbs_size], &((struct mac_tb_req *) (tb_p->data))->data_ptr[0], tb_size);
       tbs_size = tbs_size + tb_size;
       free_mem_block(tb_p, __func__);
@@ -179,14 +181,14 @@ tbs_size_t mac_rlc_data_req(
       return (tbs_size_t)0;
     }
   } else {
-    key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);
+    key = RLC_COLL_KEY_LCID_VALUE(module_idP, rntiP, enb_flagP, channel_idP, srb_flag);  //!生成key 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if ((sourceL2Id > 0) && (destinationL2Id > 0))
        key = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(module_idP, rntiP, enb_flagP, channel_idP, sourceL2Id, destinationL2Id, srb_flag);
 #endif
   }
 
-  h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+  h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p); //!从hash table中，根据key，获得rlc_union_p
 
   if (h_rc == HASH_TABLE_OK) {
     rlc_mode = rlc_union_p->mode;
@@ -215,7 +217,9 @@ tbs_size_t mac_rlc_data_req(
     break;
 
   case RLC_MODE_TM:
+  	//！返回一个mac_data_req 
     data_request = rlc_tm_mac_data_request(&ctxt, &rlc_union_p->rlc.tm);
+	//!buffer_pP是MAC 定义的地址，往这个地址上copy数据
     ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
@@ -295,7 +299,7 @@ void mac_rlc_data_ind     (
     rlc_mode = RLC_MODE_NONE;
     //AssertFatal (0 , "%s RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
   }
-
+   //！从MAC Buffer 中分割PDU出来，这里的tb_sizeP 是怎么获得的？
   struct mac_data_ind data_ind = mac_rlc_deserialize_tb(buffer_pP, tb_sizeP, num_tbP, crcs_pP);
 
   switch (rlc_mode) {

@@ -88,6 +88,7 @@ rlc_um_get_buffer_occupancy (rlc_um_entity_t *rlc_pP) {
   }
 }
 //-----------------------------------------------------------------------------
+//!用于MAC 向RLC 请求数据，将SDU 中的数据分配到PDU中
 void
 rlc_um_get_pdus (const protocol_ctxt_t *const ctxt_pP, void *argP) {
   rlc_um_entity_t *rlc_p = (rlc_um_entity_t *) argP;
@@ -186,8 +187,10 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
       if (data_indP.data.nb_elements > 0 && MESSAGE_CHART_GENERATOR) {
         tb_p = data_indP.data.head;
 
-        while (tb_p != NULL) {
+        while (tb_p != NULL) { 
+		 //！对每一个MAC 给过来的PDU 都进行同样的处理，得到PDU header信息
           tb_size_in_bytes   = ((struct mac_tb_ind *) (tb_p->data))->size;
+		  // 从MAC 给的Buffer中获取PDU haader信息，包括E,FI,LI+E,等header信息，还包括data field size等。 
           rlc_um_get_pdu_infos(ctxt_pP,l_rlc_p,(rlc_um_pdu_sn_10_t *) ((struct mac_tb_ind *) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
           message_string_size = 0;
           message_string_size += sprintf(&message_string[message_string_size],
@@ -216,7 +219,7 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
         }
       }/*MESSAGE_CHART_GENERATOR*/
 
-      list_free (&data_indP.data);
+      list_free (&data_indP.data); //将整个链表释放
       break;
 
     case RLC_DATA_TRANSFER_READY_STATE:
@@ -235,7 +238,7 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
       // Upon reception of a CRLC-SUSPEND-Req from upper layers, the RLC
       // entity:
       // - enters the LOCAL_SUSPEND state.
-      data_indP.tb_size = data_indP.tb_size >> 3;
+      data_indP.tb_size = data_indP.tb_size >> 3;//!按照byte 
 
       if (data_indP.data.nb_elements > 0 && (MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC))) {
         LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" MAC_DATA_IND %d TBs\n",
@@ -244,6 +247,7 @@ rlc_um_rx (const protocol_ctxt_t *const ctxt_pP, void *argP, struct mac_data_ind
         tb_p = data_indP.data.head;
 
         while (tb_p != NULL) {
+		  //!<每一个节点都进行header的解析
           tb_size_in_bytes   = ((struct mac_tb_ind *) (tb_p->data))->size;
           rlc_um_get_pdu_infos(ctxt_pP,
                                l_rlc_p,(rlc_um_pdu_sn_10_t *) ((struct mac_tb_ind *) (tb_p->data))->data_ptr,
@@ -385,10 +389,11 @@ rlc_um_mac_status_indication (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP
 
   if (rlc_pP) {
     status_resp.rlc_info.rlc_protocol_state      = rlc_p->protocol_state;
-    rlc_um_check_timer_dar_time_out(ctxt_pP, rlc_p);
+    rlc_um_check_timer_dar_time_out(ctxt_pP, rlc_p); //!查询是否timer 超时
     rlc_p->nb_bytes_requested_by_mac = tbs_sizeP;
+	//！SDU 的buffer 占用
     status_resp.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (rlc_p);
-
+     //！如果RLC 上已经有SDU了
     if ((status_resp.buffer_occupancy_in_bytes > 0) && ((mb_p = list_get_head(&rlc_p->input_sdus)) != NULL)) {
       if (enb_flagP == ENB_FLAG_YES) {
         /* For eNB: add minimum RLC UM header size for the scheduler */
@@ -451,6 +456,7 @@ rlc_um_set_nb_bytes_requested_by_mac (
 }
 
 //-----------------------------------------------------------------------------
+//!MAC 向RLC 要数据，一次性就把所有SDU 都要走了么？
 struct mac_data_req
 rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,const eNB_flag_t  enb_flagP) {
   struct mac_data_req data_req;
@@ -461,25 +467,32 @@ rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,cons
   rlc_um_pdu_info_t   pdu_info;
   int                 octet_index, index;
   rlc_um_entity_t *l_rlc_p = (rlc_um_entity_t *) rlc_pP;
-  rlc_um_get_pdus(ctxt_pP, l_rlc_p);
+  //！把填好的PDU 添加到rlc_p->pdus_to_mac_layer 链表中，
+  rlc_um_get_pdus(ctxt_pP, l_rlc_p);　//
   list_init (&data_req.data, NULL);
+  //！将pdus_to_mac_layer 链表添加到data 这个链表中
   list_add_list (&l_rlc_p->pdus_to_mac_layer, &data_req.data);
 
   if (enb_flagP) {
     // redundant in UE MAC Tx processing and not used in eNB scheduler ...
+    //当前的SDU Buffer中还剩下的byte 
     data_req.buffer_occupancy_in_bytes = rlc_um_get_buffer_occupancy (l_rlc_p);
 
     if (data_req.buffer_occupancy_in_bytes > 0) {
+		//再加上一个固定header 的长度
+		//！为什么enb 需要加上2个byte, 如果是UE 的RLC 给UE的MAC，同样也应该加上2个byte的header啊
       data_req.buffer_occupancy_in_bytes += l_rlc_p->tx_header_min_length_in_bytes;
     }
   }
 
   data_req.rlc_info.rlc_protocol_state = l_rlc_p->protocol_state;
 
-  if (data_req.data.nb_elements > 0) {
-    tb_p = data_req.data.head;
+  if (data_req.data.nb_elements > 0) { //!data 是一个链表，链表中的成员个数> 0 
+    tb_p = data_req.data.head; //!得到链表的头节点
 
-    while (tb_p != NULL) {
+    while (tb_p != NULL) { //！从头节点开始依次处理
+
+	  //！更新RLC 实体的发送参数
       tb_size_in_bytes   = ((struct mac_tb_req *) (tb_p->data))->tb_size;
       LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" MAC_DATA_REQUEST  TB SIZE %u\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p),
@@ -494,6 +507,7 @@ rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,cons
         continue;
       }
 
+	  //!下面的代码是用来生成画消息图
       if (MESSAGE_CHART_GENERATOR || LOG_DEBUGFLAG(DEBUG_RLC) ) {
         rlc_um_get_pdu_infos(ctxt_pP, l_rlc_p,(rlc_um_pdu_sn_10_t *) ((struct mac_tb_req *) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
 
@@ -588,7 +602,10 @@ rlc_um_mac_data_request (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP,cons
 //-----------------------------------------------------------------------------
 void
 rlc_um_mac_data_indication (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, struct mac_data_ind data_indP) {
+  //！对MAC的PDU 进行接收窗处理，并处理可以上传的PDU到上层，将PDU去掉header把数据copy到上层buffer 中
+  //！这里的上层是PDCP
   rlc_um_rx (ctxt_pP, rlc_pP, data_indP);
+  //！检查是否timer超时，如果超时，根据协议处理，更新ux,ur,uh等
   rlc_um_check_timer_dar_time_out(ctxt_pP, rlc_pP);
 }
 
@@ -609,11 +626,12 @@ rlc_um_data_req (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, mem_block_t
   // IMPORTANT : do not change order of affectations
   ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size = ((struct rlc_um_data_req *) (sdu_pP->data))->data_size;
   //rlc_p->nb_sdu += 1;
+  //! first byte 地址偏移掉header 
   ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->first_byte = (uint8_t *)&sdu_pP->data[sizeof (struct rlc_um_data_req_alloc)];
   ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_remaining_size = ((struct rlc_um_tx_sdu_management *)
       (sdu_pP->data))->sdu_size;
-  ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_segmented_size = 0;
-  ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_creation_time = ctxt_pP->frame;
+  ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_segmented_size = 0;  //!已经分配给PDU的size 
+  ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_creation_time = ctxt_pP->frame; //!创建时间以帧为单位
   //rlc_p->next_sdu_index = (rlc_p->next_sdu_index + 1) % rlc_p->size_input_sdus_buffer;
   rlc_p->stat_tx_pdcp_sdu   += 1;
   rlc_p->stat_tx_pdcp_bytes += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
@@ -666,7 +684,9 @@ rlc_um_data_req (const protocol_ctxt_t *const ctxt_pP, void *rlc_pP, mem_block_t
   }
 
   RLC_UM_MUTEX_LOCK(&rlc_p->lock_input_sdus, ctxt_pP, rlc_p);
+  //！SDU中的Buffer size 增加
   rlc_p->buffer_occupancy += ((struct rlc_um_tx_sdu_management *) (sdu_pP->data))->sdu_size;
+  //！将新的sdu 加入到rlc->input_sdu中 
   list_add_tail_eurecom(sdu_pP, &rlc_p->input_sdus);
   RLC_UM_MUTEX_UNLOCK(&rlc_p->lock_input_sdus);
 

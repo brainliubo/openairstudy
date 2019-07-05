@@ -59,8 +59,8 @@ void config_req_rlc_um (
           config_um_pP->is_mXch,
           rb_idP);
 
-    rlc_um_init(ctxt_pP, rlc_p);
-
+    rlc_um_init(ctxt_pP, rlc_p); //！初始化
+    //!<从NULL状态切换到data transfer ready 状态
     if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
       rlc_um_set_debug_infos(ctxt_pP, rlc_p, srb_flagP, rb_idP, chan_idP);
       rlc_um_configure(
@@ -143,9 +143,10 @@ void config_req_rlc_um_asn1 (
   } else
 #endif
   {
+     //!<生成64bit长度的key 
      key  = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
-    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);//!<返回rlc_union
     //AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u",
     //             ctxt_pP->module_id,
     //             ctxt_pP->rnti,
@@ -159,136 +160,138 @@ void config_req_rlc_um_asn1 (
     }
     rlc_p = &rlc_union_p->rlc.um;
 
-  //-----------------------------------------------------------------------------
-  LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %u \n",
-        PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
-        (dl_rlc_pP && dl_rlc_pP->t_Reordering<31)?t_Reordering_tab[dl_rlc_pP->t_Reordering]:-1,
-        rb_idP);
-
-  rlc_um_init(ctxt_pP, rlc_p);
-
-
-  if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT)) {
-    rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP, chan_idP);
-
-    if (ul_rlc_pP != NULL) {
-      switch (ul_rlc_pP->sn_FieldLength) {
-      case LTE_SN_FieldLength_size5:
-        ul_sn_FieldLength = 5;
-        break;
-
-      case LTE_SN_FieldLength_size10:
-        ul_sn_FieldLength = 10;
-        break;
-
-      default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
-              PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
-              rlc_p->rb_id,
-              ul_rlc_pP->sn_FieldLength);
-        MSC_LOG_RX_DISCARDED_MESSAGE(
+    //-----------------------------------------------------------------------------
+    LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %u \n",
+          PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
+          (dl_rlc_pP && dl_rlc_pP->t_Reordering<31)?t_Reordering_tab[dl_rlc_pP->t_Reordering]:-1,
+          rb_idP);
+  
+    rlc_um_init(ctxt_pP, rlc_p); //！初始化UM实体，包括list的Initial，SN号，header长度，互斥锁的initial 
+  
+  
+    if (rlc_um_fsm_notify_event (ctxt_pP, rlc_p, RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_DATA_TRANSFER_READY_STATE_EVENT))
+    {
+      rlc_um_set_debug_infos(ctxt_pP,rlc_p, srb_flagP, rb_idP, chan_idP);
+  
+      if (ul_rlc_pP != NULL) {
+        switch (ul_rlc_pP->sn_FieldLength) {
+        case LTE_SN_FieldLength_size5:
+          ul_sn_FieldLength = 5;
+          break;
+  
+        case LTE_SN_FieldLength_size10:
+          ul_sn_FieldLength = 10;
+          break;
+  
+        default:
+          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID UL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
+                PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
+                rlc_p->rb_id,
+                ul_rlc_pP->sn_FieldLength);
+          MSC_LOG_RX_DISCARDED_MESSAGE(
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
+        	    NULL,
+        	    0,
+        	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ UL sn_FieldLength %u",
+        	    MSC_AS_TIME_ARGS(ctxt_pP),
+        	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
+        	    ul_rlc_pP->sn_FieldLength);
+          return;
+        }
+      }
+  
+      if (dl_rlc_pP != NULL) {
+        switch (dl_rlc_pP->sn_FieldLength) {
+        case LTE_SN_FieldLength_size5:
+          dl_sn_FieldLength = 5;
+          break;
+  
+        case LTE_SN_FieldLength_size10:
+          dl_sn_FieldLength = 10;
+          break;
+  
+        default:
+          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
+                PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
+                rlc_p->rb_id,
+                dl_rlc_pP->sn_FieldLength);
+          MSC_LOG_RX_DISCARDED_MESSAGE(
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
+        	    NULL,
+        	    0,
+        	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ DL sn_FieldLength %u",
+        	    MSC_AS_TIME_ARGS(ctxt_pP),
+        	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
+        	    dl_rlc_pP->sn_FieldLength);
+          return;
+        }
+  
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        if (dl_rlc_pP->t_Reordering<32) {
+  #else
+        if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
+  #endif
+          t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
+        } else {
+          LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
+                PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
+                rlc_p->rb_id,
+                dl_rlc_pP->t_Reordering);
+  
+          MSC_LOG_RX_DISCARDED_MESSAGE(
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
+        	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
+        	    NULL,
+        	    0,
+        	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u",
+        	    MSC_AS_TIME_ARGS(ctxt_pP),
+        	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
+        	    dl_rlc_pP->t_Reordering);
+          return;
+        }
+      }
+  
+      if (ctxt_pP->enb_flag > 0) {
+        rlc_um_configure(ctxt_pP,rlc_p,
+                         t_Reordering,
+                         ul_sn_FieldLength,
+                         dl_sn_FieldLength,
+                         mbms_flagP);
+        MSC_LOG_RX_MESSAGE(
       	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
       	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
       	    NULL,
       	    0,
-      	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ UL sn_FieldLength %u",
+      	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
       	    MSC_AS_TIME_ARGS(ctxt_pP),
       	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-      	    ul_rlc_pP->sn_FieldLength);
-        return;
-      }
-    }
-
-    if (dl_rlc_pP != NULL) {
-      switch (dl_rlc_pP->sn_FieldLength) {
-      case LTE_SN_FieldLength_size5:
-        dl_sn_FieldLength = 5;
-        break;
-
-      case LTE_SN_FieldLength_size10:
-        dl_sn_FieldLength = 10;
-        break;
-
-      default:
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID DL sn_FieldLength %ld, RLC NOT CONFIGURED\n",
-              PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
-              rlc_p->rb_id,
-              dl_rlc_pP->sn_FieldLength);
-        MSC_LOG_RX_DISCARDED_MESSAGE(
-      	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-      	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-      	    NULL,
-      	    0,
-      	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ DL sn_FieldLength %u",
-      	    MSC_AS_TIME_ARGS(ctxt_pP),
-      	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-      	    dl_rlc_pP->sn_FieldLength);
-        return;
-      }
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      if (dl_rlc_pP->t_Reordering<32) {
-#else
-      if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
-#endif
-        t_Reordering = t_Reordering_tab[dl_rlc_pP->t_Reordering];
+      	    t_Reordering,
+      	    ul_sn_FieldLength,
+      	    dl_sn_FieldLength);
       } else {
-        LOG_E(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID T_Reordering %ld, RLC NOT CONFIGURED\n",
-              PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_p),
-              rlc_p->rb_id,
-              dl_rlc_pP->t_Reordering);
-
-        MSC_LOG_RX_DISCARDED_MESSAGE(
+  
+        rlc_um_configure(ctxt_pP,rlc_p,
+                         t_Reordering,
+                         dl_sn_FieldLength,
+                         ul_sn_FieldLength,
+                         mbms_flagP);
+        MSC_LOG_RX_MESSAGE(
       	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
       	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
       	    NULL,
       	    0,
-      	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u",
+      	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
       	    MSC_AS_TIME_ARGS(ctxt_pP),
       	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-      	    dl_rlc_pP->t_Reordering);
-        return;
+      	    t_Reordering,
+      	    dl_sn_FieldLength,
+      	    ul_sn_FieldLength);
       }
-    }
-
-    if (ctxt_pP->enb_flag > 0) {
-      rlc_um_configure(ctxt_pP,rlc_p,
-                       t_Reordering,
-                       ul_sn_FieldLength,
-                       dl_sn_FieldLength,
-                       mbms_flagP);
-      MSC_LOG_RX_MESSAGE(
-    	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-    	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-    	    NULL,
-    	    0,
-    	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
-    	    MSC_AS_TIME_ARGS(ctxt_pP),
-    	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-    	    t_Reordering,
-    	    ul_sn_FieldLength,
-    	    dl_sn_FieldLength);
-    } else {
-
-      rlc_um_configure(ctxt_pP,rlc_p,
-                       t_Reordering,
-                       dl_sn_FieldLength,
-                       ul_sn_FieldLength,
-                       mbms_flagP);
-      MSC_LOG_RX_MESSAGE(
-    	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
-    	    (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RRC_ENB:MSC_RRC_UE,
-    	    NULL,
-    	    0,
-    	    MSC_AS_TIME_FMT" "PROTOCOL_RLC_AM_MSC_FMT" CONFIG-REQ t_Reord %u rx snfl %u tx snfl %u",
-    	    MSC_AS_TIME_ARGS(ctxt_pP),
-    	    PROTOCOL_RLC_AM_MSC_ARGS(ctxt_pP, rlc_p),
-    	    t_Reordering,
-    	    dl_sn_FieldLength,
-    	    ul_sn_FieldLength);
     }
   }
-}
+} //!< 这里是Liubo 添加的括号。
 //-----------------------------------------------------------------------------
 void
 rlc_um_init (
@@ -309,33 +312,33 @@ rlc_um_init (
   } else {
     LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [INIT] STATE VARIABLES, BUFFERS, LISTS\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP));
-    memset (rlc_pP, 0, sizeof (rlc_um_entity_t));
+    memset (rlc_pP, 0, sizeof (rlc_um_entity_t));  //实体全部清0 
     // TX SIDE
-    list_init (&rlc_pP->pdus_to_mac_layer, NULL);
-    pthread_mutex_init(&rlc_pP->lock_input_sdus, NULL);
-    list_init (&rlc_pP->input_sdus, NULL);
+    list_init (&rlc_pP->pdus_to_mac_layer, NULL); //!<头尾指针都清0 
+    pthread_mutex_init(&rlc_pP->lock_input_sdus, NULL); //!< 互斥锁初始化后，处于未锁住态 
+    list_init (&rlc_pP->input_sdus, NULL); //!<上层传输进来的Buffer
 
     rlc_pP->protocol_state = RLC_NULL_STATE;
 
     //rlc_pP->vt_us = 0;
 
     // RX SIDE
-    list_init (&rlc_pP->pdus_from_mac_layer, NULL);
+    list_init (&rlc_pP->pdus_from_mac_layer, NULL); 
     //rlc_pP->vr_ur = 0;
     //rlc_pP->vr_ux = 0;
     //rlc_pP->vr_uh = 0;
     //rlc_pP->output_sdu_size_to_write = 0;
     //rlc_pP->output_sdu_in_construction = NULL;
 
-    rlc_pP->rx_sn_length          = 10;
-    rlc_pP->rx_header_min_length_in_bytes = 2;
-    rlc_pP->tx_sn_length          = 10;
+    rlc_pP->rx_sn_length          = 10; //！上层发送下来的SDU 组包PDU时的SN号的长度，初始化为10，可以为5
+    rlc_pP->rx_header_min_length_in_bytes = 2; //！SN为10的话，则PDU header 长度为2个byte 
+    rlc_pP->tx_sn_length          = 10;    //!< tx 和rx 的HEADER一致 
     rlc_pP->tx_header_min_length_in_bytes = 2;
 
-    pthread_mutex_init(&rlc_pP->lock_dar_buffer, NULL);
+    pthread_mutex_init(&rlc_pP->lock_dar_buffer, NULL); //！锁经过初始化后，为未锁定状态
 
     if (rlc_pP->dar_buffer == NULL) {
-      rlc_pP->dar_buffer = calloc (1, 1024 * sizeof (void *));
+      rlc_pP->dar_buffer = calloc (1, 1024 * sizeof (void *)); //dar_buffer 是指向结构体指针的指针，这里申请1024个int来存放指针
     }
 
     rlc_pP->first_pdu = 1;
@@ -405,12 +408,12 @@ void rlc_um_configure(
   if (rx_sn_field_lengthP == 10) {
     rlc_pP->rx_sn_length                  = 10;
     rlc_pP->rx_sn_modulo                  = RLC_UM_SN_10_BITS_MODULO;
-    rlc_pP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
+    rlc_pP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;  //！根据协议，sn = 10bit时，接收窗长512
     rlc_pP->rx_header_min_length_in_bytes = 2;
   } else if (rx_sn_field_lengthP == 5) {
     rlc_pP->rx_sn_length                  = 5;
     rlc_pP->rx_sn_modulo                  = RLC_UM_SN_5_BITS_MODULO;
-    rlc_pP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS;
+    rlc_pP->rx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_5_BITS; //！根据协议，sn = 5bit时，接收窗长16 
     rlc_pP->rx_header_min_length_in_bytes = 1;
   } else if (rx_sn_field_lengthP != 0) {
     LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" [CONFIGURE] RB %u INVALID RX SN LENGTH %d BITS NOT IMPLEMENTED YET, RLC NOT CONFIGURED\n",
@@ -420,7 +423,7 @@ void rlc_um_configure(
     return;
   }
 
-  if (tx_sn_field_lengthP == 10) {
+  if (tx_sn_field_lengthP == 10) {      //！发送的设置，这里的发送窗跟接收窗一样，但是协议中没有设置发送窗
     rlc_pP->tx_sn_length                  = 10;
     rlc_pP->tx_sn_modulo                  = RLC_UM_SN_10_BITS_MODULO;
     rlc_pP->tx_um_window_size             = RLC_UM_WINDOW_SIZE_SN_10_BITS;
@@ -447,7 +450,7 @@ void rlc_um_configure(
 
   rlc_pP->last_reassemblied_sn  = rlc_pP->rx_sn_modulo - 1;
   rlc_pP->last_reassemblied_missing_sn  = rlc_pP->rx_sn_modulo - 1;
-  rlc_pP->reassembly_missing_sn_detected = 0;
+  rlc_pP->reassembly_missing_sn_detected = 0;  //！用在接收多个PDU 才能组包一个SDU时，检测是否丢包
   // timers
   rlc_um_init_timer_reordering(ctxt_pP,rlc_pP, timer_reorderingP);
 

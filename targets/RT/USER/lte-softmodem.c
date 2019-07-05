@@ -119,8 +119,8 @@ uint8_t nfapi_mode = 0; // Default to monolithic mode
 
 uint16_t sf_ahead=4;
 
-pthread_cond_t sync_cond;
-pthread_mutex_t sync_mutex;
+pthread_cond_t sync_cond;  //!< linux 线程的条件变量
+pthread_mutex_t sync_mutex;  //!< linux线程的mutex 互斥锁
 int sync_var=-1; //!< protected by mutex \ref sync_mutex.
 int config_sync_var=-1;
 

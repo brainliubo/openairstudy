@@ -1,0 +1,21 @@
+var searchData=
+[
+  ['if_5fcompress',['if_compress',['../structru__config__s.html#af70428728b2fdf5ebb9feaf1e473387f',1,'ru_config_s::if_compress()'],['../structeth__params__t.html#a13deb519ea5f11320b3694cc1a20694f',1,'eth_params_t::if_compress()']]],
+  ['initialized',['initialized',['../structrlc__am__entity__s.html#aa90b332268bb1002f9e298364c165a02',1,'rlc_am_entity_s::initialized()'],['../structrlc__um__entity__s.html#af6c33c6cfc2b707f766d0f119b7f0c38',1,'rlc_um_entity_s::initialized()']]],
+  ['input_5fsdus',['input_sdus',['../structrlc__am__entity__s.html#a52ea68f3ff91e0c2e8b1ccaf1fbf7bba',1,'rlc_am_entity_s::input_sdus()'],['../structrlc__um__entity__s.html#a3b3497e641907ce59af73da290ed5683',1,'rlc_um_entity_s::input_sdus()']]],
+  ['inst',['inst',['../structpdcp__data__req__header__s.html#a755e977e597819aac0a66b7e08febcc6',1,'pdcp_data_req_header_s::inst()'],['../structpdcp__data__ind__header__s.html#a9585d1da112fddc640a2a49511a02121',1,'pdcp_data_ind_header_s::inst()'],['../structpc5s__header__t.html#a2a77b06d98677274210b6f519ad23b00',1,'pc5s_header_t::inst()']]],
+  ['instanciated_5finstance',['instanciated_instance',['../structpdcp__mbms__s.html#af48d1c2f270051993b246a0deef98b89',1,'pdcp_mbms_s::instanciated_instance()'],['../structrlc__mbms__s.html#af156bac37b951a4d5b0f868c0671c547',1,'rlc_mbms_s::instanciated_instance()']]],
+  ['integrityprotalgorithm',['integrityProtAlgorithm',['../structpdcp__s.html#a9004c486ae3ac81c46c4398b8f2f296a',1,'pdcp_s']]],
+  ['ip_5fpdcp',['ip_pdcp',['../structpdcp__stats__s.html#aa6743892dffb1cee9d7159c0a3a76208',1,'pdcp_stats_s']]],
+  ['ipv4',['ipv4',['../structmme__ip__address__s.html#a8d497ce9f4eb5404bb81e9d27628de57',1,'mme_ip_address_s']]],
+  ['ipv4_5faddress',['ipv4_address',['../structmme__ip__address__s.html#af95aafd3d119167b7dc9437ea5e7cb9b',1,'mme_ip_address_s']]],
+  ['ipv6',['ipv6',['../structmme__ip__address__s.html#a6f214157c80f4acd58ad019602ff86a8',1,'mme_ip_address_s']]],
+  ['ipv6_5faddress',['ipv6_address',['../structmme__ip__address__s.html#a06b133c8de7157114098f08ed800f860',1,'mme_ip_address_s']]],
+  ['iq_5frxrescale',['iq_rxrescale',['../structopenair0__config__t.html#a309204c5cef2f024a413502b9053203d',1,'openair0_config_t']]],
+  ['iq_5ftxshift',['iq_txshift',['../structopenair0__config__t.html#acb5f4a44bc209245a53c12a749541101',1,'openair0_config_t']]],
+  ['is_5fdata_5fplane',['is_data_plane',['../structrlc__am__entity__s.html#aae0ced5008049e2932cd44484f0bbb9c',1,'rlc_am_entity_s::is_data_plane()'],['../structrlc__um__entity__s.html#a0e811034b2c1af0b168b2bfeb5381e18',1,'rlc_um_entity_s::is_data_plane()']]],
+  ['is_5fmxch',['is_mxch',['../structrlc__um__entity__s.html#acf87fb10eaeef8e8578b4e354642bcda',1,'rlc_um_entity_s']]],
+  ['is_5fsrb',['is_srb',['../structpdcp__s.html#a0bff9e6a5cf9057d7a5d2eca6ffacee9',1,'pdcp_s']]],
+  ['is_5fue',['is_ue',['../structpdcp__s.html#a2916665c775b6b689b076f8e48228225',1,'pdcp_s']]],
+  ['is_5fuplink_5fdownlink',['is_uplink_downlink',['../structrlc__um__entity__s.html#aa2daf9f01a3e1483d90bd38e3bd16e6d',1,'rlc_um_entity_s']]]
+];

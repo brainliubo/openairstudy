@@ -64,6 +64,8 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, con
   LOG_T(componentP, "+-----+-------------------------------------------------+\n");
 
   for (octet_index = 0; octet_index < sizeP; octet_index++) {
+
+    //!<每行打16个字节
     if ((octet_index % 16) == 0) {
       if (octet_index != 0) {
         LOG_T(componentP, " |\n");
@@ -309,6 +311,7 @@ rlc_op_status_t rlc_stat_req     (
 }
 
 //-----------------------------------------------------------------------------
+//！RLC 向上层申请数据
 rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
                                   const srb_flag_t   srb_flagP,
                                   const MBMS_flag_t  MBMS_flagP,
@@ -480,13 +483,15 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
           return RLC_OP_STATUS_OUT_OF_RESSOURCES;
         }
 
+		//！这里申请出来的data 的首地址指向的是包含了rlc_um_data_req_alloc这个结构体的
         new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_um_data_req_alloc), __func__);
 
         if (new_sdu_p != NULL) {
           // PROCESS OF COMPRESSION HERE:
           memset (new_sdu_p->data, 0, sizeof (struct rlc_um_data_req_alloc));
           memcpy (&new_sdu_p->data[sizeof (struct rlc_um_data_req_alloc)], &sdu_pP->data[0], sdu_sizeP);
-          ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
+          //！这里的头部是rlc_um_data_req_alloc ,是一个union 
+		  ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
           free_mem_block(sdu_pP, __func__);
           rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
@@ -605,7 +610,7 @@ void rlc_data_ind     (
     MBMS_flagP,
     rb_idP,
     sdu_sizeP,
-    sdu_pP);
+    sdu_pP);  //！在PDCP 层处理时，将这个buffer指针指向的memory释放掉
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,

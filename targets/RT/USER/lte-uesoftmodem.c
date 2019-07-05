@@ -674,7 +674,7 @@ int stop_L1L2(module_id_t enb_id) {
 int restart_L1L2(module_id_t enb_id) {
   return 0;
 }
-
+//!< lte_uesoftmodem.c中的main入口
 int main( int argc, char **argv ) {
 #if defined (XFORMS)
   void *status;
@@ -682,7 +682,7 @@ int main( int argc, char **argv ) {
   int CC_id;
   uint8_t  abstraction_flag=0;
 #ifdef PDCP_USE_NETLINK
-#ifdef UESIM_EXPANSION
+#ifdef UESIM_EXPANSION  //!< 不支持多个UE 
   memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
 #endif
 #endif
@@ -748,10 +748,10 @@ int main( int argc, char **argv ) {
   T_Config_Init();
 #endif
   //randominit (0);
-  set_taus_seed (0);
+  set_taus_seed (0);  //!< get s0,s1,s2 
   cpuf=get_cpu_freq_GHz();
-  pthread_cond_init(&sync_cond,NULL);
-  pthread_mutex_init(&sync_mutex, NULL);
+  pthread_cond_init(&sync_cond,NULL);  //!<初始化条件变量
+  pthread_mutex_init(&sync_mutex, NULL); //!< 初始化互斥变量
 #if defined(ENABLE_ITTI)
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
@@ -893,7 +893,7 @@ int main( int argc, char **argv ) {
 
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
-#if defined(ENABLE_ITTI)
+#if defined(ENABLE_ITTI)   //!<create UE task,include task_nas_ue and task_rrc_ue 
   if (create_tasks_ue(NB_UE_INST) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
@@ -905,7 +905,7 @@ int main( int argc, char **argv ) {
 
   printf("ITTI tasks created\n");
 #endif
-  mlockall(MCL_CURRENT | MCL_FUTURE);
+  mlockall(MCL_CURRENT | MCL_FUTURE); //!<linux的Lock all memory for thread
   rt_sleep_ns(10*100000000ULL);
   const char *nfapi_mode_str = "<UNKNOWN>";
   // start the main UE threads
@@ -953,7 +953,7 @@ int main( int argc, char **argv ) {
   }
 
 
-  if (get_softmodem_params()->phy_test==0) {
+  if (get_softmodem_params()->phy_test==0) {  //!<实际场景，不进行phy_test 
     printf("Filling UE band info\n");
     fill_ue_band_info();
     dl_phy_sync_success (0, 0, 0, 1);
