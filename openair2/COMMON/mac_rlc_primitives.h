@@ -151,7 +151,10 @@ struct mac_rx_tb_management {
 
 struct mac_tb_req {
   // BE CAREFULL TO KEEP THE SAME MAPPING FOR THE 6 FIELDS BELLOW AS FOR  struct mac_tx_tb_management
-  unsigned char             *data_ptr;
+  //!用于不同模式下的data 首地址，在TM模式下，直接就是数据，而在UM模式下，还包含了header等信息，总的
+  // 总的来说，就是PDU的首地址，不管PDU是TM PDU,UM PDU,AM PDU 
+  unsigned char             *data_ptr;  //!用于不同模式下的data 首地址，
+  
   unsigned char              first_bit;
   tb_size_t                  tb_size;
   // align the tb we have to know its size

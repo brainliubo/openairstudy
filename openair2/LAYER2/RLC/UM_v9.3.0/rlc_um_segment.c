@@ -97,10 +97,10 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
     //! 计算LI+E 和可能存在的Padding的header大小
     //! 没有申请过内存时，先header和扩展部分的大小，然后根据sdu大小+header+扩展部分的大小和MAC tb_size进行
     //！ 比较，确定要传给MAC的大小 
-    if (!pdu_mem_p) {
+    if (!pdu_mem_p) {  //!之前没有分配PDU 
       if (rlc_pP->input_sdus.nb_elements <= 1) {
         max_li_overhead = 0;  //!<只有一个sdu
-      } else {
+      } else { //!如果有多个SDU,则需要有扩展部分的E+LI
         max_li_overhead = (((rlc_pP->input_sdus.nb_elements - 1) * 3) / 2) + ((rlc_pP->input_sdus.nb_elements - 1) % 2);
       }
        //!如果MAC要发送的tb_size 大于SDU + HEADER + LI, 则要发送的data_pdu_size就是实际大小
@@ -138,7 +138,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
             data_pdu_size);
 #endif
       pdu_remaining_size = data_pdu_size - 2; //去掉2个固定的header 
-      
+       //!pdu_p指向的是PDU的开头部分，UM模式下是包含了header的
       pdu_p        = (rlc_um_pdu_sn_10_t*) (&pdu_mem_p->data[sizeof(struct mac_tb_req)]);
 	  //!<开头是mac_tb_req,然后才是pdu
       pdu_tb_req_p = (struct mac_tb_req*) (pdu_mem_p->data);
@@ -162,7 +162,7 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
      //!计算一个PDU 中要填多少个SDU 
     while ((sdu_in_buffer) && (continue_fill_pdu_with_sdu > 0)) {
       sdu_mngt_p = ((struct rlc_um_tx_sdu_management *) (sdu_in_buffer->data));
-      //!<这里说明data的头部数据是按照rlc_um_tx_sdu_management 进行组包的么？ 
+       
       if (sdu_mngt_p->sdu_remaining_size > test_pdu_remaining_size) {
         // no LI
         continue_fill_pdu_with_sdu = 0;  //！只需要填写一次PDU即可，不需要再填PDU了

@@ -111,6 +111,7 @@ tbs_size_t mac_rlc_serialize_tb (char* buffer_pP, list_t transport_blocksP)
       rlc_util_print_hex_octets(RLC, ((struct mac_tb_req *) (tb_p->data))->data_ptr, tb_size);
 #endif
       //！每次将一个节点所指向的地址的数据向buffer中copy,并增加tbs_size ,直到所有的节点处理完
+      //! 这里注意，这里搬移的数据是包含了RLC header的数据
       memcpy(&buffer_pP[tbs_size], &((struct mac_tb_req *) (tb_p->data))->data_ptr[0], tb_size);
       tbs_size = tbs_size + tb_size;
       free_mem_block(tb_p, __func__);
@@ -212,8 +213,10 @@ tbs_size_t mac_rlc_data_req(
 
   case RLC_MODE_UM:
     if (!enb_flagP) rlc_um_set_nb_bytes_requested_by_mac(&rlc_union_p->rlc.um,tb_sizeP);
-	data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um,enb_flagP);
-    ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
+    //!将SDU 分段放进PDU中
+    data_request = rlc_um_mac_data_request(&ctxt, &rlc_union_p->rlc.um,enb_flagP);
+    //！将多个PDU的数据全部
+	ret_tb_size = mac_rlc_serialize_tb(buffer_pP, data_request.data);
     break;
 
   case RLC_MODE_TM:
@@ -299,7 +302,7 @@ void mac_rlc_data_ind     (
     rlc_mode = RLC_MODE_NONE;
     //AssertFatal (0 , "%s RLC not configured rb id %u lcid %u module %u!\n", __FUNCTION__, rb_id, channel_idP, ue_module_idP);
   }
-   //！从MAC Buffer 中分割PDU出来，这里的tb_sizeP 是怎么获得的？
+   //！从MAC Buffer 中分割PDU出来，这里的tb_sizeP 是MAC 给过来的
   struct mac_data_ind data_ind = mac_rlc_deserialize_tb(buffer_pP, tb_sizeP, num_tbP, crcs_pP);
 
   switch (rlc_mode) {
@@ -325,6 +328,9 @@ void mac_rlc_data_ind     (
 
 }
 //-----------------------------------------------------------------------------
+//!MAC 和RLC 进行状态的交互，包括： 
+//!1: MAC 告知RLC ，TB_SIZE 
+//!2: RLC 告知MAC,当前SDU 个数和SDU size 
 mac_rlc_status_resp_t mac_rlc_status_ind(
   const module_id_t       module_idP,
   const rnti_t            rntiP,

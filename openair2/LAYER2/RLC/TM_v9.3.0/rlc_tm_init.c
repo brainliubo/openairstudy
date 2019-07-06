@@ -79,7 +79,7 @@ void rlc_tm_init (
   rlcP->buffer_occupancy  = 0;
 
   // SPARE : not 3GPP
-  rlcP->size_input_sdus_buffer = 16;
+  rlcP->size_input_sdus_buffer = 16; //！TM 最大16个buffer
 
   if ((rlcP->input_sdus_alloc == NULL) && (rlcP->size_input_sdus_buffer > 0)) {
     rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *), __func__);

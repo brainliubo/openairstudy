@@ -494,6 +494,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 		  ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
           free_mem_block(sdu_pP, __func__);
+		  //！这里有个问题：PDCP的数据从哪里搬移进buffer了呢？
           rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
           //free_mem_block(new_sdu, __func__);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
@@ -507,6 +508,8 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
         break;
 
       case RLC_MODE_TM:
+
+	    //！申请Mem时，增加了size: sizeof (struct rlc_tm_data_req_alloc)
         new_sdu_p = get_free_mem_block (sdu_sizeP + sizeof (struct rlc_tm_data_req_alloc), __func__);
 
         if (new_sdu_p != NULL) {
@@ -515,8 +518,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
           memcpy (&new_sdu_p->data[sizeof (struct rlc_tm_data_req_alloc)], &sdu_pP->data[0], sdu_sizeP);
           ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_tm_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_tm_data_req_alloc);
-          free_mem_block(sdu_pP, __func__);
-          rlc_tm_data_req(ctxt_pP, &rlc_union_p->rlc.tm, new_sdu_p);
+          free_mem_block(sdu_pP, __func__); //!sdu_pP是从上层给过来的SDU,这里将其从memblock 中删除掉
+           //！这里只是将申请出来的mem 地址添加到了input_sdu中，但是数据并没有copy进去，哪里看到数据的搬移呢？
+		  rlc_tm_data_req(ctxt_pP, &rlc_union_p->rlc.tm, new_sdu_p);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
           return RLC_OP_STATUS_OK;
         } else {
@@ -548,7 +552,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
           memcpy (&new_sdu_p->data[sizeof (struct rlc_um_data_req_alloc)], &sdu_pP->data[0], sdu_sizeP);
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_size = sdu_sizeP;
           ((struct rlc_um_data_req *) (new_sdu_p->data))->data_offset = sizeof (struct rlc_um_data_req_alloc);
-          free_mem_block(sdu_pP, __func__);
+          free_mem_block(sdu_pP, __func__); 
           rlc_um_data_req(ctxt_pP, &rlc_union_p->rlc.um, new_sdu_p);
           //free_mem_block(new_sdu, __func__);
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
@@ -626,6 +630,9 @@ void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
   }
 }
 //-----------------------------------------------------------------------------
+//!rlc 模块的初始化，主要作用是
+//！1：创建了最大用户个数的RB级别的hashtable
+//！2：初始化内存池
 int
 rlc_module_init (void) {
   //-----------------------------------------------------------------------------
@@ -634,8 +641,12 @@ rlc_module_init (void) {
   /* for no gcc warnings */
   (void)k;
   LOG_D(RLC, "MODULE INIT\n");
-  rlc_rrc_data_ind  = NULL;
-  rlc_rrc_data_conf = NULL;
+  rlc_rrc_data_ind  = NULL; //！函数型指针
+  rlc_rrc_data_conf = NULL;  //!函数型指针
+
+  //！这里的hashfunc = NULL
+  //! freefunc = rb_free_rlc_union ,入参必须是 （void ）func (void *)
+  //! 返回的是一个hashtable 指针
   rlc_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, rb_free_rlc_union);
 
   //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
@@ -674,7 +685,7 @@ rlc_module_init (void) {
 #endif
   }
 
-  pool_buffer_init();
+  pool_buffer_init(); 
   return(0);
 }
 //-----------------------------------------------------------------------------

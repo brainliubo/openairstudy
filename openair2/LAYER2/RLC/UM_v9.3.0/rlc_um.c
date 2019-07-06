@@ -124,6 +124,7 @@ rlc_um_get_pdus (const protocol_ctxt_t *const ctxt_pP, void *argP) {
 
       // SEND DATA TO MAC
       if (rlc_p->tx_sn_length == 10) {
+	  	//!按照PDU 的header，size,从SDU中分割数据给PDU
         rlc_um_segment_10 (ctxt_pP, rlc_p);
       }
 

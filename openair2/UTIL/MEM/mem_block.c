@@ -196,6 +196,7 @@ free_mem_block (mem_block_t * leP, const char* caller)
 #endif
 
   if (leP->pool_id <= MEM_MNGT_POOL_ID_COPY) {
+  	//!将这块memory重新加入到链表中
     list_add_tail_eurecom (leP, &mem_block_var.mem_lists[leP->pool_id]);
 #ifdef DEBUG_MEM_MNGT_ALLOC
     counters[leP->pool_id] -= 1;
@@ -235,7 +236,7 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
   if (pthread_mutex_lock(&mtex)) abort();
 #endif
 
-  size = sizeP >> 6;
+  size = sizeP >> 6;  //！这里的sizeP的单位是什么？ bit? byte? 
   pool_selected = 0;
 
   while ((size)) {
@@ -246,6 +247,7 @@ get_free_mem_block (uint32_t sizeP, const char* caller)
   // pool is selected according to the size requested, now get a block
   // if no block is available pick one in an other pool
   do {
+  	 //！从内存池中，找到一块pool，然后从中返回一块Memory 
     if ((le = list_remove_head (&mem_block_var.mem_lists[pool_selected]))) {
 #ifdef DEBUG_MEM_MNGT_ALLOC
       counters[pool_selected] += 1;
